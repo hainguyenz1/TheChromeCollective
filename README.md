@@ -2,7 +2,7 @@
 
 A mobile app built with React Native (Expo), Node.js/Express.js backend, and MongoDB for data storage. The app supports users in listing and browsing Chrome Hearts products in both retail and resale markets, with features like real-time feed updates, photo uploads, keyword filtering, and a built-in marketplace.
 
-## 🚀 Features
+## Features
 
 - **Product Management**: Create, edit, and manage Chrome Hearts product listings
 - **Marketplace**: Buy and sell Chrome Hearts items with built-in marketplace functionality
@@ -13,7 +13,7 @@ A mobile app built with React Native (Expo), Node.js/Express.js backend, and Mon
 - **User Profiles**: User management with profiles and preferences
 - **Authentication**: Custom authentication system (Auth0 integration planned for future)
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Frontend
 - **React Native** with Expo
@@ -36,13 +36,13 @@ A mobile app built with React Native (Expo), Node.js/Express.js backend, and Mon
 - **Docker Compose** for orchestration
 - **Redis** for caching (future use)
 
-## 📋 Prerequisites
+## Prerequisites
 
 - Docker and Docker Compose
 - Node.js 18+ (for local development)
 - Git
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Clone the Repository
 ```bash
@@ -71,7 +71,7 @@ docker-compose logs -f
 curl http://localhost:5000/health
 ```
 
-## 🔧 Development Setup
+## Development Setup
 
 ### Backend Development
 ```bash
@@ -98,7 +98,7 @@ docker exec -it chrome_collective_mongodb mongosh -u admin -p password123
 # Password: minioadmin123
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 TheChromeCollective/
@@ -131,7 +131,7 @@ TheChromeCollective/
 └── README.md
 ```
 
-## 🔐 Environment Variables
+## Environment Variables
 
 ### Backend (.env)
 ```env
@@ -152,7 +152,7 @@ EXPO_PUBLIC_API_URL=http://localhost:5000
 EXPO_PUBLIC_SOCKET_URL=http://localhost:5000
 ```
 
-## 📊 Database Schema
+## Database Schema
 
 ### Collections
 - **users**: User accounts and profiles
@@ -166,7 +166,7 @@ EXPO_PUBLIC_SOCKET_URL=http://localhost:5000
 - Compound indexes for complex filtering
 - Automatic indexing for performance optimization
 
-## 🔄 API Endpoints
+## API Endpoints
 
 ### Authentication
 - `POST /api/auth/register` - User registration
@@ -196,7 +196,7 @@ EXPO_PUBLIC_SOCKET_URL=http://localhost:5000
 - `POST /api/images/upload` - Upload image
 - `DELETE /api/images/:id` - Delete image
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Backend tests
@@ -208,7 +208,7 @@ cd frontend
 npm test
 ```
 
-## 📱 Mobile Development
+## Mobile Development
 
 ### Expo Development
 ```bash
@@ -230,7 +230,7 @@ expo build:android
 expo build:ios
 ```
 
-## 🚀 Deployment
+## Deployment
 
 ### Production Environment
 1. Update environment variables for production
@@ -247,7 +247,7 @@ MINIO_ENDPOINT=<production-minio-endpoint>
 JWT_SECRET=<production-jwt-secret>
 ```
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -255,26 +255,26 @@ JWT_SECRET=<production-jwt-secret>
 4. Add tests if applicable
 5. Submit a pull request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🗺️ Roadmap
+## Roadmap
 
 See [roadmap.md](roadmap.md) for detailed sprint-by-sprint development plan.
 
-## 📋 Tasks
+## Tasks
 
 See [task.md](task.md) for detailed engineering tasks and tracking.
 
-## 🆘 Support
+## Support
 
 For support and questions:
 - Create an issue in the repository
 - Check the documentation
 - Review the roadmap and task files
 
-## 🔮 Future Enhancements
+## Future Enhancements
 
 - LLM Assistant integration
 - Auth0 authentication
