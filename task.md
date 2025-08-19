@@ -30,7 +30,7 @@
   - **Estimated Time**: 2-3 hours
   - **Dependencies**: Schema design
 
-### 🔧 Backend Tasks
+### Backend Tasks
 
 #### API Development
 - **Task**: Create Express.js server structure
