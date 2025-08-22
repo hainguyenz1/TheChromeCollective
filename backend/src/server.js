@@ -18,7 +18,7 @@ const categoryRoutes = require('./routes/categories');
 const imageRoutes = require('./routes/images');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Connect to MongoDB
 connectDB();
@@ -71,6 +71,7 @@ app.use('/api/listings', listingRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/images', imageRoutes);
+app.use('/api/uploads', require('./routes/uploads'));
 
 // Root endpoint
 app.get('/', (req, res) => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
 const HomeScreen = ({ navigation }) => {
@@ -37,26 +37,34 @@ const HomeScreen = ({ navigation }) => {
         </View>
 
         {/* Quick Actions */}
-        <View style={styles.actionsSection}>
+        <View style={styles.quickActions}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
-          
           <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.actionButton}>
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={() => navigation.navigate('TrackingRetailPrices')}
+            >
+              <Text style={styles.actionButtonText}>Tracking Retail Prices</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={() => Alert.alert('Coming Soon', 'Browse Product Listing feature will be available soon!')}
+            >
               <Text style={styles.actionButtonText}>Browse Product Listing</Text>
             </TouchableOpacity>
             
-            <TouchableOpacity style={styles.actionButton}>
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={() => Alert.alert('Coming Soon', 'Create Listing feature will be available soon!')}
+            >
               <Text style={styles.actionButtonText}>Create Listing</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
               style={styles.actionButton}
-              onPress={handleTrackingRetailPrices}
+              onPress={() => navigation.navigate('MyAccount')}
             >
-              <Text style={styles.actionButtonText}>Tracking Retail Prices</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.actionButton}>
               <Text style={styles.actionButtonText}>My Account</Text>
             </TouchableOpacity>
           </View>
@@ -169,14 +177,8 @@ const styles = StyleSheet.create({
     color: '#666666',
     lineHeight: 24,
   },
-  actionsSection: {
+  quickActions: {
     marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 15,
   },
   actionButtons: {
     flexDirection: 'row',
