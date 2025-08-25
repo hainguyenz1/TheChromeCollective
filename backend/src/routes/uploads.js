@@ -1,25 +1,51 @@
 const express = require('express');
 const router = express.Router();
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand, CreateBucketCommand, HeadBucketCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const crypto = require('crypto');
 
 // Initialize S3 client for MinIO
 const s3Client = new S3Client({
-  endpoint: process.env.MINIO_ENDPOINT || 'http://localhost:9000',
-  region: process.env.MINIO_REGION || 'us-east-1',
+  endpoint: `http://minio:9000`, // Use service name in Docker network
+  region: 'us-east-1',
   credentials: {
-    accessKeyId: process.env.MINIO_ACCESS_KEY || 'minioadmin',
-    secretAccessKey: process.env.MINIO_SECRET_KEY || 'minioadmin'
+    accessKeyId: 'minioadmin',
+    secretAccessKey: 'minioadmin123'
   },
   forcePathStyle: true // Required for MinIO
 });
 
-const BUCKET_NAME = process.env.MINIO_BUCKET || 'chrome-hearts';
+const BUCKET_NAME = process.env.MINIO_BUCKET || 'chrome-collective-images';
+
+// Ensure bucket exists
+async function ensureBucketExists() {
+  try {
+    // Check if bucket exists
+    await s3Client.send(new HeadBucketCommand({ Bucket: BUCKET_NAME }));
+    console.log(`✅ Bucket '${BUCKET_NAME}' already exists`);
+  } catch (error) {
+    if (error.name === 'NotFound' || error.name === 'NoSuchBucket') {
+      try {
+        // Create bucket if it doesn't exist
+        await s3Client.send(new CreateBucketCommand({ Bucket: BUCKET_NAME }));
+        console.log(`✅ Created bucket '${BUCKET_NAME}'`);
+      } catch (createError) {
+        console.error(`❌ Failed to create bucket '${BUCKET_NAME}':`, createError);
+        throw createError;
+      }
+    } else {
+      console.error(`❌ Error checking bucket '${BUCKET_NAME}':`, error);
+      throw error;
+    }
+  }
+}
 
 // Generate pre-signed URL for image upload
 router.post('/presign', async (req, res) => {
   try {
+    // Ensure bucket exists before proceeding
+    await ensureBucketExists();
+    
     const { fileName, contentType } = req.body;
     
     if (!fileName || !contentType) {
@@ -49,7 +75,7 @@ router.post('/presign', async (req, res) => {
     });
 
     // Generate public URL for the uploaded file
-    const publicUrl = `${process.env.MINIO_ENDPOINT || 'http://localhost:9000'}/${BUCKET_NAME}/${fileKey}`;
+    const publicUrl = `http://localhost:9000/${BUCKET_NAME}/${fileKey}`;
 
     res.json({
       presignedUrl,
@@ -70,7 +96,7 @@ router.post('/presign', async (req, res) => {
 router.get('/url/:fileKey', async (req, res) => {
   try {
     const { fileKey } = req.params;
-    const publicUrl = `${process.env.MINIO_ENDPOINT || 'http://localhost:9000'}/${BUCKET_NAME}/${fileKey}`;
+    const publicUrl = `http://localhost:9000/${BUCKET_NAME}/${fileKey}`;
     
     res.json({ publicUrl });
   } catch (error) {

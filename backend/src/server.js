@@ -18,7 +18,7 @@ const categoryRoutes = require('./routes/categories');
 const imageRoutes = require('./routes/images');
 
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5002;
 
 // Connect to MongoDB
 connectDB();

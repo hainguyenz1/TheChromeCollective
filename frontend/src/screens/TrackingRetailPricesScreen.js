@@ -12,6 +12,7 @@ import {
   ActivityIndicator
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 
 const TrackingRetailPricesScreen = ({ navigation }) => {
   const [trackedItems, setTrackedItems] = useState([
@@ -37,10 +38,46 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
   // Add Product form state
   const [formData, setFormData] = useState({
     name: '',
-    retailPrice: ''
+    description: '',
+    retailPrice: '',
+    category: ''
   });
   const [selectedImages, setSelectedImages] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Fetch products from database
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch('http://localhost:5002/api/products');
+      if (response.ok) {
+        const products = await response.json();
+        // Transform database products to match the trackedItems format
+        const transformedProducts = products.map(product => ({
+          id: product._id || product.id,
+          name: product.name,
+          retailPrice: product.retailPrice,
+          image: product.images && product.images.length > 0 
+            ? { uri: product.images[0].url } 
+            : require('../../assets/Chrome-Hearts-Cemetery-Ring.jpeg'), // fallback image
+          lastUpdated: 'Just now'
+        }));
+        
+        // Combine hardcoded items with database products
+        const allProducts = [
+          ...trackedItems.filter(item => item.id === '1' || item.id === '2'), // Keep hardcoded items
+          ...transformedProducts
+        ];
+        setTrackedItems(allProducts);
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  };
+
+  // Fetch products on component mount
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
   // Search functionality
   useEffect(() => {
@@ -88,7 +125,7 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
     for (const image of selectedImages) {
       try {
         // Get presigned URL
-        const presignResponse = await fetch('http://localhost:5001/api/uploads/presign', {
+        const presignResponse = await fetch('http://localhost:5002/api/uploads/presign', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -105,10 +142,14 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
 
         const { presignedUrl, fileKey, publicUrl } = await presignResponse.json();
 
-        // Upload image to MinIO/S3
+        // For React Native, let's try the most basic approach
+        // Just fetch the image and send it directly
+        const imageResponse = await fetch(image.uri);
+        
+        // Upload the raw response to MinIO/S3
         const uploadResponse = await fetch(presignedUrl, {
           method: 'PUT',
-          body: image,
+          body: imageResponse,
           headers: {
             'Content-Type': image.type,
           },
@@ -130,17 +171,17 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
 
   // Create product function
   const createProduct = async (images) => {
-    const response = await fetch('http://localhost:5001/api/products', {
+          const response = await fetch('http://localhost:5002/api/products', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         name: formData.name,
-        description: 'Product description', // Default description
+        description: formData.description,
         retailPrice: parseFloat(formData.retailPrice),
         currency: 'USD', // Always USD
-        category: 'Other', // Default category
+        category: formData.category,
         images: images
       }),
     });
@@ -158,6 +199,16 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
     // Validation
     if (!formData.name.trim()) {
       Alert.alert('Error', 'Product name is required');
+      return;
+    }
+    
+    if (!formData.description.trim()) {
+      Alert.alert('Error', 'Product description is required');
+      return;
+    }
+    
+    if (!formData.category.trim()) {
+      Alert.alert('Error', 'Product category is required');
       return;
     }
     
@@ -183,9 +234,14 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
       // Reset form
       setFormData({
         name: '',
-        retailPrice: ''
+        description: '',
+        retailPrice: '',
+        category: ''
       });
       setSelectedImages([]);
+      
+      // Refresh the products list to show the new product
+      await fetchProducts();
       
       Alert.alert('Success', 'Product created successfully!');
     } catch (error) {
@@ -291,6 +347,24 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
             placeholder="Product Name"
             value={formData.name}
             onChangeText={(text) => setFormData({...formData, name: text})}
+            placeholderTextColor="#999"
+          />
+          
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder="Product Description"
+            value={formData.description}
+            onChangeText={(text) => setFormData({...formData, description: text})}
+            placeholderTextColor="#999"
+            multiline={true}
+            numberOfLines={3}
+          />
+          
+          <TextInput
+            style={styles.input}
+            placeholder="Category (e.g., Rings, Necklaces, Bracelets)"
+            value={formData.category}
+            onChangeText={(text) => setFormData({...formData, category: text})}
             placeholderTextColor="#999"
           />
           
