@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  ScrollView, 
-  TouchableOpacity, 
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
   TextInput,
   FlatList,
   Alert,
   Image,
   ActivityIndicator
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
 
 const TrackingRetailPricesScreen = ({ navigation }) => {
   const [trackedItems, setTrackedItems] = useState([
@@ -48,26 +46,26 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
   // Fetch products from database
   const fetchProducts = async () => {
     try {
-      const response = await fetch('http://localhost:5002/api/products');
+      const response = await fetch('http://localhost:5001/api/products');
       if (response.ok) {
         const products = await response.json();
-        // Transform database products to match the trackedItems format
+
+
         const transformedProducts = products.map(product => ({
           id: product._id || product.id,
           name: product.name,
           retailPrice: product.retailPrice,
-          image: product.images && product.images.length > 0 
-            ? { uri: product.images[0].url } 
-            : require('../../assets/Chrome-Hearts-Cemetery-Ring.jpeg'), // fallback image
+          image: product.images && product.images.length > 0
+            ? { uri: product.images[0].url }
+            : require('../../assets/Chrome-Hearts-Cemetery-Ring.jpeg'),
           lastUpdated: 'Just now'
         }));
-        
-        // Combine hardcoded items with database products
-        const allProducts = [
-          ...trackedItems.filter(item => item.id === '1' || item.id === '2'), // Keep hardcoded items
+
+        setTrackedItems([
+          ...trackedItems.filter(item => item.id === '1' || item.id === '2'),
           ...transformedProducts
-        ];
-        setTrackedItems(allProducts);
+        ]);
+
       }
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -91,27 +89,26 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
     }
   }, [searchQuery, trackedItems]);
 
-  // Image picker function
-  const pickImages = async () => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsMultipleSelection: true,
-        quality: 0.8,
-        aspect: [4, 3],
-      });
+  // Simple image picker for web
+  const pickImages = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.accept = 'image/*';
 
-      if (!result.canceled && result.assets) {
-        const newImages = result.assets.map(asset => ({
-          uri: asset.uri,
-          type: 'image/jpeg',
-          name: `product_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`
-        }));
-        setSelectedImages([...selectedImages, ...newImages]);
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to pick images');
-    }
+    input.onchange = (event) => {
+      const files = Array.from(event.target.files);
+      const newImages = files.map(file => ({
+        uri: URL.createObjectURL(file),
+        type: file.type,
+        name: file.name,
+        file: file // Keep the actual file object for upload
+      }));
+
+      setSelectedImages([...selectedImages, ...newImages]);
+    };
+
+    input.click();
   };
 
   const removeImage = (index) => {
@@ -121,15 +118,13 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
   // Upload images function
   const uploadImages = async () => {
     const uploadedImages = [];
-    
+
     for (const image of selectedImages) {
       try {
         // Get presigned URL
-        const presignResponse = await fetch('http://localhost:5002/api/uploads/presign', {
+        const presignResponse = await fetch('http://localhost:5001/api/uploads/presign', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             fileName: image.name,
             contentType: image.type
@@ -137,26 +132,20 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
         });
 
         if (!presignResponse.ok) {
-          throw new Error('Failed to get presigned URL');
+          throw new Error(`Failed to get presigned URL: ${presignResponse.status}`);
         }
 
         const { presignedUrl, fileKey, publicUrl } = await presignResponse.json();
 
-        // For React Native, let's try the most basic approach
-        // Just fetch the image and send it directly
-        const imageResponse = await fetch(image.uri);
-        
-        // Upload the raw response to MinIO/S3
+        // Upload file directly
         const uploadResponse = await fetch(presignedUrl, {
           method: 'PUT',
-          body: imageResponse,
-          headers: {
-            'Content-Type': image.type,
-          },
+          body: image.file,
+          headers: { 'Content-Type': image.type }
         });
 
         if (!uploadResponse.ok) {
-          throw new Error('Failed to upload image');
+          throw new Error(`Failed to upload image: ${uploadResponse.status}`);
         }
 
         uploadedImages.push({ key: fileKey, url: publicUrl });
@@ -165,22 +154,20 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
         throw new Error(`Failed to upload image: ${error.message}`);
       }
     }
-    
+
     return uploadedImages;
   };
 
   // Create product function
   const createProduct = async (images) => {
-          const response = await fetch('http://localhost:5002/api/products', {
+    const response = await fetch('http://localhost:5001/api/products', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: formData.name,
         description: formData.description,
         retailPrice: parseFloat(formData.retailPrice),
-        currency: 'USD', // Always USD
+        currency: 'USD',
         category: formData.category,
         images: images
       }),
@@ -188,7 +175,7 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error || 'Failed to create product');
+      throw new Error(error.error || error.message || 'Failed to create product');
     }
 
     return response.json();
@@ -197,52 +184,24 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
   // Handle product submission
   const handleProductSubmit = async () => {
     // Validation
-    if (!formData.name.trim()) {
-      Alert.alert('Error', 'Product name is required');
-      return;
-    }
-    
-    if (!formData.description.trim()) {
-      Alert.alert('Error', 'Product description is required');
-      return;
-    }
-    
-    if (!formData.category.trim()) {
-      Alert.alert('Error', 'Product category is required');
-      return;
-    }
-    
-    if (!formData.retailPrice || parseFloat(formData.retailPrice) <= 0) {
-      Alert.alert('Error', 'Valid retail price is required');
-      return;
-    }
-    
-    if (selectedImages.length === 0) {
-      Alert.alert('Error', 'At least one image is required');
+    if (!formData.name.trim() || !formData.description.trim() ||
+      !formData.category.trim() || !formData.retailPrice ||
+      parseFloat(formData.retailPrice) <= 0 || selectedImages.length === 0) {
+      Alert.alert('Error', 'All fields are required and at least one image is needed');
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // Upload images first
       const uploadedImages = await uploadImages();
-      
-      // Create product
       await createProduct(uploadedImages);
-      
-      // Reset form
-      setFormData({
-        name: '',
-        description: '',
-        retailPrice: '',
-        category: ''
-      });
+
+      // Reset form and refresh list
+      setFormData({ name: '', description: '', retailPrice: '', category: '' });
       setSelectedImages([]);
-      
-      // Refresh the products list to show the new product
       await fetchProducts();
-      
+
       Alert.alert('Success', 'Product created successfully!');
     } catch (error) {
       Alert.alert('Error', error.message);
@@ -252,24 +211,18 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
   };
 
   const removeItem = (id) => {
-    console.log('Attempting to remove item with id:', id);
-    console.log('Current trackedItems:', trackedItems);
-    
     Alert.alert(
       'Remove Item',
       'Are you sure you want to remove this item from tracking?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Remove', 
+        {
+          text: 'Remove',
           style: 'destructive',
           onPress: () => {
-            console.log('Removing item with id:', id);
-            setTrackedItems(prevItems => {
-              const newItems = prevItems.filter(item => item.id !== id);
-              console.log('New items after removal:', newItems);
-              return newItems;
-            });
+            setTrackedItems(prevItems =>
+              prevItems.filter(item => item.id !== id)
+            );
           }
         }
       ]
@@ -279,20 +232,20 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
   const renderTrackedItem = ({ item }) => (
     <View style={styles.itemCard}>
       <View style={styles.itemImageContainer}>
-        <Image 
-          source={item.image} 
+        <Image
+          source={item.image}
           style={styles.itemImage}
           resizeMode="cover"
         />
       </View>
-      
+
       <View style={styles.itemDetails}>
         <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
         <Text style={styles.retailPrice}>${item.retailPrice.toLocaleString()}</Text>
         <Text style={styles.lastUpdated}>Updated: {item.lastUpdated}</Text>
       </View>
-      
-      <TouchableOpacity 
+
+      <TouchableOpacity
         style={styles.removeButton}
         onPress={() => removeItem(item.id)}
       >
@@ -304,7 +257,7 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
@@ -317,19 +270,19 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
         {/* Add Product Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Add New Product to Database</Text>
-          
+
           {/* Product Images */}
           <View style={styles.imageSection}>
             <TouchableOpacity style={styles.imagePickerButton} onPress={pickImages}>
               <Text style={styles.imagePickerButtonText}>Select Product Images</Text>
             </TouchableOpacity>
-            
+
             {selectedImages.length > 0 && (
               <View style={styles.imagePreviewContainer}>
                 {selectedImages.map((image, index) => (
                   <View key={index} style={styles.imagePreview}>
                     <Image source={{ uri: image.uri }} style={styles.previewImage} />
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={styles.removeImageButton}
                       onPress={() => removeImage(index)}
                     >
@@ -346,39 +299,39 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
             style={styles.input}
             placeholder="Product Name"
             value={formData.name}
-            onChangeText={(text) => setFormData({...formData, name: text})}
+            onChangeText={(text) => setFormData({ ...formData, name: text })}
             placeholderTextColor="#999"
           />
-          
+
           <TextInput
             style={[styles.input, styles.textArea]}
             placeholder="Product Description"
             value={formData.description}
-            onChangeText={(text) => setFormData({...formData, description: text})}
+            onChangeText={(text) => setFormData({ ...formData, description: text })}
             placeholderTextColor="#999"
             multiline={true}
             numberOfLines={3}
           />
-          
+
           <TextInput
             style={styles.input}
             placeholder="Category (e.g., Rings, Necklaces, Bracelets)"
             value={formData.category}
-            onChangeText={(text) => setFormData({...formData, category: text})}
+            onChangeText={(text) => setFormData({ ...formData, category: text })}
             placeholderTextColor="#999"
           />
-          
+
           <TextInput
             style={styles.input}
             placeholder="Retail Price (USD)"
             value={formData.retailPrice}
-            onChangeText={(text) => setFormData({...formData, retailPrice: text})}
+            onChangeText={(text) => setFormData({ ...formData, retailPrice: text })}
             placeholderTextColor="#999"
             keyboardType="numeric"
           />
 
           {/* Submit Button */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
             onPress={handleProductSubmit}
             disabled={isSubmitting}
@@ -396,7 +349,7 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
           <Text style={styles.sectionTitle}>
             Product's Retail Price ({trackedItems.length})
           </Text>
-          
+
           {/* Search Bar */}
           <View style={styles.searchContainer}>
             <TextInput
@@ -407,7 +360,7 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
               placeholderTextColor="#999"
             />
           </View>
-          
+
           <FlatList
             data={filteredItems}
             renderItem={renderTrackedItem}

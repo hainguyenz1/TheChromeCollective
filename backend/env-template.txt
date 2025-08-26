@@ -1,0 +1,22 @@
+# MongoDB Connection String (MongoDB Atlas or local MongoDB)
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/chrome_collective?retryWrites=true&w=majority
+
+# Server Configuration
+PORT=5001
+NODE_ENV=development
+
+# JWT Secret for Authentication
+JWT_SECRET=your-super-secret-jwt-key-here
+
+# MinIO Configuration
+MINIO_ENDPOINT=localhost
+MINIO_PORT=9000
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin123
+MINIO_BUCKET_NAME=chrome-collective
+
+# Redis Configuration (optional)
+REDIS_URL=redis://:redispassword123@localhost:6379
+
+# CORS Origins (comma-separated)
+CORS_ORIGINS=http://localhost:3000,http://localhost:19006

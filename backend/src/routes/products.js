@@ -58,13 +58,21 @@ router.post('/', async (req, res) => {
     }
     
     res.status(500).json({ 
-      error: 'Failed to create product' 
+      error: 'Failed to create product',
+      details: error.message
     });
   }
 });
 
 // Get all products with pagination and sorting
 router.get('/', async (req, res) => {
+  // Disable caching for this endpoint
+  res.set({
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  });
+
   try {
     const { 
       page = 1, 
@@ -108,7 +116,7 @@ router.get('/', async (req, res) => {
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;
 
-    res.json({
+    const response = {
       products,
       pagination: {
         currentPage: parseInt(page),
@@ -118,18 +126,29 @@ router.get('/', async (req, res) => {
         hasNextPage,
         hasPrevPage
       }
-    });
+    };
+
+    console.log('Sending response:', JSON.stringify(response, null, 2));
+    res.json(response);
 
   } catch (error) {
     console.error('Error fetching products:', error);
     res.status(500).json({ 
-      error: 'Failed to fetch products' 
+      error: 'Failed to fetch products',
+      details: error.message
     });
   }
 });
 
 // Get product by ID
 router.get('/:id', async (req, res) => {
+  // Disable caching for this endpoint
+  res.set({
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  });
+
   try {
     const product = await Product.findById(req.params.id);
     

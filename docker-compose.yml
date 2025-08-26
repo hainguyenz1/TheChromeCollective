@@ -38,36 +38,6 @@ services:
     security_opt:
       - no-new-privileges:true
 
-  # Backend API Server
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: chrome_collective_backend
-    restart: unless-stopped
-    environment:
-      NODE_ENV: development
-      PORT: 5002
-      MONGODB_URI: mongodb+srv://hainguyen29100:Hai29102001@cluster0.8ry4j7n.mongodb.net/chrome_collective?retryWrites=true&w=majority&appName=Cluster0
-      MINIO_ENDPOINT: minio
-      MINIO_PORT: 9000
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin123
-      MINIO_BUCKET: chrome-collective-images
-      JWT_SECRET: your-super-secret-jwt-key-change-in-production
-    ports:
-      - "5002:5002"
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
-    depends_on:
-      - minio
-    networks:
-      - chrome_collective_network
-    command: npm run dev
-    security_opt:
-      - no-new-privileges:true
-
   # Redis Cache (for future use)
   redis:
     image: redis:7.2-alpine
@@ -83,7 +53,7 @@ services:
       - no-new-privileges:true
     command: redis-server --appendonly yes --requirepass redispassword123
 
-  # Frontend Development Server (Expo)
+
   frontend:
     build:
       context: ./frontend
@@ -102,8 +72,6 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    depends_on:
-      - backend
     networks:
       - chrome_collective_network
     security_opt:

@@ -6,7 +6,7 @@ const crypto = require('crypto');
 
 // Initialize S3 client for MinIO
 const s3Client = new S3Client({
-  endpoint: `http://minio:9000`, // Use service name in Docker network
+  endpoint: `http://localhost:9000`,
   region: 'us-east-1',
   credentials: {
     accessKeyId: 'minioadmin',
@@ -45,7 +45,6 @@ router.post('/presign', async (req, res) => {
   try {
     // Ensure bucket exists before proceeding
     await ensureBucketExists();
-    
     const { fileName, contentType } = req.body;
     
     if (!fileName || !contentType) {
@@ -55,7 +54,7 @@ router.post('/presign', async (req, res) => {
     }
 
     // Generate unique key for the file
-    const fileKey = `products/${crypto.randomUUID()}-${fileName}`;
+    const fileKey = `${crypto.randomUUID()}-${fileName}`;
     
     // Create command for S3
     const command = new PutObjectCommand({
@@ -76,6 +75,7 @@ router.post('/presign', async (req, res) => {
 
     // Generate public URL for the uploaded file
     const publicUrl = `http://localhost:9000/${BUCKET_NAME}/${fileKey}`;
+    console.log('Uploaded file URL:', publicUrl);
 
     res.json({
       presignedUrl,

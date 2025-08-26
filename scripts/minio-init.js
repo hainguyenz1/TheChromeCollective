@@ -36,8 +36,40 @@ async function initializeMinIO() {
       
       await minioClient.setBucketPolicy(bucketName, JSON.stringify(policy));
       console.log(`✅ Bucket ${bucketName} created successfully with public read access`);
+      
+      // Set CORS policy to allow cross-origin requests from frontend
+      const corsPolicy = [
+        {
+          AllowedOrigin: ['*'],
+          AllowedMethod: ['GET', 'PUT', 'POST', 'DELETE', 'HEAD'],
+          AllowedHeader: ['*'],
+          ExposeHeader: ['ETag', 'Content-Length', 'Content-Type'],
+          MaxAgeSeconds: 3000
+        }
+      ];
+      
+      await minioClient.setBucketCors(bucketName, corsPolicy);
+      console.log(`✅ CORS policy set for bucket ${bucketName}`);
     } else {
       console.log(`✅ Bucket ${bucketName} already exists`);
+      
+      // Update CORS policy even if bucket exists
+      try {
+        const corsPolicy = [
+          {
+            AllowedOrigin: ['*'],
+            AllowedMethod: ['GET', 'PUT', 'POST', 'DELETE', 'HEAD'],
+            AllowedHeader: ['*'],
+            ExposeHeader: ['ETag', 'Content-Length', 'Content-Type'],
+            MaxAgeSeconds: 3000
+          }
+        ];
+        
+        await minioClient.setBucketCors(bucketName, corsPolicy);
+        console.log(`✅ CORS policy updated for bucket ${bucketName}`);
+      } catch (corsError) {
+        console.log(`⚠️ Could not update CORS policy: ${corsError.message}`);
+      }
     }
     
     console.log('🎉 MinIO initialization completed successfully!');
