@@ -16,14 +16,14 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
   const [trackedItems, setTrackedItems] = useState([
     {
       id: '1',
-      name: 'Chrome Hearts Cemetery Cross Ring',
+      name: 'Cemetery Cross Ring',
       retailPrice: 1265,
       image: require('../../assets/Chrome-Hearts-Cemetery-Ring.jpeg'),
       lastUpdated: 'Just now'
     },
     {
       id: '2',
-      name: 'Chrome Hearts Forever Ring',
+      name: 'Forever Ring',
       retailPrice: 420,
       image: require('../../assets/Forever-Ring.jpeg'),
       lastUpdated: 'Just now'
