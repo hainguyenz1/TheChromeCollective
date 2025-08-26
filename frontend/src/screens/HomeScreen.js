@@ -49,14 +49,14 @@ const HomeScreen = ({ navigation }) => {
             
             <TouchableOpacity 
               style={styles.actionButton}
-              onPress={() => Alert.alert('Coming Soon', 'Browse Product Listing feature will be available soon!')}
+              onPress={() => navigation.navigate('BrowseListings')}
             >
               <Text style={styles.actionButtonText}>Browse Product Listing</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
               style={styles.actionButton}
-              onPress={() => Alert.alert('Coming Soon', 'Create Listing feature will be available soon!')}
+              onPress={() => navigation.navigate('CreateListing')}
             >
               <Text style={styles.actionButtonText}>Create Listing</Text>
             </TouchableOpacity>

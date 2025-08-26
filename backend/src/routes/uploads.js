@@ -45,7 +45,7 @@ router.post('/presign', async (req, res) => {
   try {
     // Ensure bucket exists before proceeding
     await ensureBucketExists();
-    const { fileName, contentType } = req.body;
+    const { fileName, contentType, prefix = '' } = req.body;
     
     if (!fileName || !contentType) {
       return res.status(400).json({ 
@@ -53,8 +53,11 @@ router.post('/presign', async (req, res) => {
       });
     }
 
-    // Generate unique key for the file
-    const fileKey = `${crypto.randomUUID()}-${fileName}`;
+    // Generate unique key for the file with optional prefix
+    const fileKey = prefix ? `${prefix}/${crypto.randomUUID()}-${fileName}` : `${crypto.randomUUID()}-${fileName}`;
+    
+    console.log('Generated file key:', fileKey);
+    console.log('Prefix used:', prefix);
     
     // Create command for S3
     const command = new PutObjectCommand({
@@ -64,7 +67,8 @@ router.post('/presign', async (req, res) => {
       // Optional: Add metadata
       Metadata: {
         'uploaded-by': 'chrome-collective',
-        'upload-date': new Date().toISOString()
+        'upload-date': new Date().toISOString(),
+        'prefix': prefix || 'none'
       }
     });
 
@@ -75,7 +79,9 @@ router.post('/presign', async (req, res) => {
 
     // Generate public URL for the uploaded file
     const publicUrl = `http://localhost:9000/${BUCKET_NAME}/${fileKey}`;
-    console.log('Uploaded file URL:', publicUrl);
+    console.log('Generated public URL:', publicUrl);
+    console.log('File key:', fileKey);
+    console.log('Bucket name:', BUCKET_NAME);
 
     res.json({
       presignedUrl,
