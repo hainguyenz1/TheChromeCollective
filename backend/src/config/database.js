@@ -12,6 +12,8 @@ const connectDB = async () => {
     const conn = await mongoose.connect(process.env.MONGODB_URI);
 
     console.log(`MongoDB Connected: ${conn.connection.host}`);
+    console.log(`Database: ${conn.connection.name}`);
+    console.log(`Connection state: ${conn.connection.readyState}`);
     
     // Handle connection events
     mongoose.connection.on('error', (err) => {
@@ -35,4 +37,4 @@ const connectDB = async () => {
   }
 };
 
-module.exports = connectDB; 
+module.exports = connectDB;

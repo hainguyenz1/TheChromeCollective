@@ -43,29 +43,59 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
   const [selectedImages, setSelectedImages] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Function to get image source with fallback
+  const getImageSource = (product) => {
+    if (product.images && product.images.length > 0) {
+      const image = product.images[0];
+      const minioUrl = image.url;
+      
+      console.log('Image for', product.name, ':', minioUrl);
+      
+      return { uri: minioUrl };
+    } else {
+      return require('../../assets/Chrome-Hearts-Cemetery-Ring.jpeg');
+    }
+  };
+
   // Fetch products from database
   const fetchProducts = async () => {
     try {
+      console.log('Fetching products...');
       const response = await fetch('http://localhost:5001/api/products');
+      
       if (response.ok) {
-        const products = await response.json();
+        const data = await response.json();
+        console.log('Response data:', data);
+        
+        // Check if the response has the expected structure
+        if (data && data.products && Array.isArray(data.products)) {
+          console.log('Products found:', data.products.length);
+          
+          const transformedProducts = data.products.map(product => {
+            console.log('Processing product:', product.name, 'Images:', product.images);
+            
+            const imageSource = getImageSource(product);
+            console.log('Image source for', product.name, ':', imageSource);
+            
+            return {
+              id: product._id || product.id,
+              name: product.name,
+              retailPrice: product.retailPrice,
+              image: imageSource,
+              lastUpdated: 'Just now'
+            };
+          });
 
-
-        const transformedProducts = products.map(product => ({
-          id: product._id || product.id,
-          name: product.name,
-          retailPrice: product.retailPrice,
-          image: product.images && product.images.length > 0
-            ? { uri: product.images[0].url }
-            : require('../../assets/Chrome-Hearts-Cemetery-Ring.jpeg'),
-          lastUpdated: 'Just now'
-        }));
-
-        setTrackedItems([
-          ...trackedItems.filter(item => item.id === '1' || item.id === '2'),
-          ...transformedProducts
-        ]);
-
+          // Update the tracked items with database products + hardcoded items
+          setTrackedItems([
+            ...trackedItems.filter(item => item.id === '1' || item.id === '2'),
+            ...transformedProducts
+          ]);
+        } else {
+          console.log('Unexpected response structure:', data);
+        }
+      } else {
+        console.error('Failed to fetch products:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -74,11 +104,13 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
 
   // Fetch products on component mount
   useEffect(() => {
+    console.log('Component mounted, fetching products...');
     fetchProducts();
   }, []);
 
   // Search functionality
   useEffect(() => {
+    console.log('trackedItems updated:', trackedItems.length, 'items');
     if (searchQuery.trim() === '') {
       setFilteredItems(trackedItems);
     } else {
@@ -160,17 +192,29 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
 
   // Create product function
   const createProduct = async (images) => {
+    console.log('Creating product with images:', images);
+    
+    // Ensure retailPrice is a valid number
+    const price = parseFloat(formData.retailPrice);
+    if (isNaN(price) || price <= 0) {
+      throw new Error('Invalid retail price');
+    }
+    
+    const productData = {
+      name: formData.name,
+      description: formData.description,
+      retailPrice: price,
+      currency: 'USD',
+      category: formData.category,
+      images: images
+    };
+    
+    console.log('Product data being sent:', productData);
+
     const response = await fetch('http://localhost:5001/api/products', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: formData.name,
-        description: formData.description,
-        retailPrice: parseFloat(formData.retailPrice),
-        currency: 'USD',
-        category: formData.category,
-        images: images
-      }),
+      body: JSON.stringify(productData),
     });
 
     if (!response.ok) {
@@ -181,13 +225,51 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
     return response.json();
   };
 
+  // Delete product from database
+  const deleteProduct = async (productId) => {
+    try {
+      console.log('Deleting product with ID:', productId);
+      
+      const response = await fetch(`http://localhost:5001/api/products/${productId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || error.message || 'Failed to delete product');
+      }
+
+      const result = await response.json();
+      console.log('Product deleted successfully:', result);
+      
+      return true;
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      throw error;
+    }
+  };
+
   // Handle product submission
   const handleProductSubmit = async () => {
+    console.log('Form data before validation:', formData);
+    
     // Validation
     if (!formData.name.trim() || !formData.description.trim() ||
-      !formData.category.trim() || !formData.retailPrice ||
-      parseFloat(formData.retailPrice) <= 0 || selectedImages.length === 0) {
+      !formData.category.trim() || !formData.retailPrice || !formData.retailPrice.trim() ||
+      selectedImages.length === 0) {
       Alert.alert('Error', 'All fields are required and at least one image is needed');
+      return;
+    }
+
+    // Validate retail price is a valid number
+    const price = parseFloat(formData.retailPrice);
+    console.log('Parsed price:', price, 'Original value:', formData.retailPrice);
+    
+    if (isNaN(price) || price <= 0) {
+      Alert.alert('Error', 'Please enter a valid retail price greater than 0');
       return;
     }
 
@@ -195,7 +277,9 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
 
     try {
       const uploadedImages = await uploadImages();
-      await createProduct(uploadedImages);
+      const result = await createProduct(uploadedImages);
+      
+      console.log('Product created successfully:', result);
 
       // Reset form and refresh list
       setFormData({ name: '', description: '', retailPrice: '', category: '' });
@@ -204,6 +288,7 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
 
       Alert.alert('Success', 'Product created successfully!');
     } catch (error) {
+      console.error('Error creating product:', error);
       Alert.alert('Error', error.message);
     } finally {
       setIsSubmitting(false);
@@ -219,40 +304,61 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
         {
           text: 'Remove',
           style: 'destructive',
-          onPress: () => {
-            setTrackedItems(prevItems =>
-              prevItems.filter(item => item.id !== id)
-            );
+          onPress: async () => {
+            try {
+              // Check if this is a database product (not hardcoded items 1 or 2)
+              if (id !== '1' && id !== '2') {
+                // Delete from database
+                await deleteProduct(id);
+                console.log('Product deleted from database');
+              }
+              
+              // Remove from local state
+              setTrackedItems(prevItems =>
+                prevItems.filter(item => item.id !== id)
+              );
+              
+              Alert.alert('Success', 'Item removed successfully!');
+            } catch (error) {
+              console.error('Error removing item:', error);
+              Alert.alert('Error', 'Failed to remove item: ' + error.message);
+            }
           }
         }
       ]
     );
   };
 
-  const renderTrackedItem = ({ item }) => (
-    <View style={styles.itemCard}>
-      <View style={styles.itemImageContainer}>
-        <Image
-          source={item.image}
-          style={styles.itemImage}
-          resizeMode="cover"
-        />
-      </View>
+  const renderTrackedItem = ({ item }) => {
+    console.log('Rendering item:', item.name, 'with image:', item.image);
+    
+    return (
+      <View style={styles.itemCard}>
+        <View style={styles.itemImageContainer}>
+          <Image
+            source={item.image}
+            style={styles.itemImage}
+            resizeMode="cover"
+            onError={(error) => console.error('Image load error for', item.name, ':', error)}
+            onLoad={() => console.log('Image loaded successfully for', item.name)}
+          />
+        </View>
 
-      <View style={styles.itemDetails}>
-        <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
-        <Text style={styles.retailPrice}>${item.retailPrice.toLocaleString()}</Text>
-        <Text style={styles.lastUpdated}>Updated: {item.lastUpdated}</Text>
-      </View>
+        <View style={styles.itemDetails}>
+          <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
+          <Text style={styles.retailPrice}>${item.retailPrice.toLocaleString()}</Text>
+          <Text style={styles.lastUpdated}>Updated: {item.lastUpdated}</Text>
+        </View>
 
-      <TouchableOpacity
-        style={styles.removeButton}
-        onPress={() => removeItem(item.id)}
-      >
-        <Text style={styles.removeButtonText}>×</Text>
-      </TouchableOpacity>
-    </View>
-  );
+        <TouchableOpacity
+          style={styles.removeButton}
+          onPress={() => removeItem(item.id)}
+        >
+          <Text style={styles.removeButtonText}>×</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -346,9 +452,14 @@ const TrackingRetailPricesScreen = ({ navigation }) => {
 
         {/* Product's Retail Price */}
         <View style={styles.trackedSection}>
-          <Text style={styles.sectionTitle}>
-            Product's Retail Price ({trackedItems.length})
-          </Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>
+              Product's Retail Price ({trackedItems.length})
+            </Text>
+            <TouchableOpacity style={styles.refreshButton} onPress={fetchProducts}>
+              <Text style={styles.refreshButtonText}>🔄 Refresh</Text>
+            </TouchableOpacity>
+          </View>
 
           {/* Search Bar */}
           <View style={styles.searchContainer}>
@@ -588,6 +699,24 @@ const styles = StyleSheet.create({
   searchInput: {
     fontSize: 16,
     color: '#333',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  refreshButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  refreshButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 
