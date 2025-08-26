@@ -100,6 +100,11 @@ const ListingDetailScreen = ({ route, navigation }) => {
   const hasMultipleImages = listing.images && listing.images.length > 1;
   const currentImage = listing.images && listing.images[currentImageIndex];
 
+  // Debug: Log screen width for troubleshooting
+  console.log('Screen width detected:', screenWidth);
+  console.log('Will show vertical gallery:', hasMultipleImages);
+  console.log('Will show horizontal mobile layout:', screenWidth <= 480 && hasMultipleImages);
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -117,15 +122,15 @@ const ListingDetailScreen = ({ route, navigation }) => {
       <ScrollView style={styles.content}>
         {/* Image Gallery Section */}
         <View style={styles.imageSection}>
-          {/* Desktop Layout: Vertical Thumbnails Left + Main Image Right */}
-          {screenWidth > 768 && hasMultipleImages && (
-            <View style={styles.thumbnailGallery}>
-              <ScrollView 
-                vertical 
-                showsVerticalScrollIndicator={false}
-                style={styles.thumbnailScrollView}
-              >
-                {listing.images.map((image, index) => (
+          {/* Vertical Thumbnail Gallery (Left Side) - Always Show */}
+          <View style={styles.thumbnailGallery}>
+            <ScrollView 
+              vertical 
+              showsVerticalScrollIndicator={false}
+              style={styles.thumbnailScrollView}
+            >
+              {listing.images && listing.images.length > 0 ? (
+                listing.images.map((image, index) => (
                   <TouchableOpacity
                     key={index}
                     style={[
@@ -143,12 +148,16 @@ const ListingDetailScreen = ({ route, navigation }) => {
                       <View style={styles.activeIndicator} />
                     )}
                   </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          )}
+                ))
+              ) : (
+                <View style={styles.noThumbnailsPlaceholder}>
+                  <Text style={styles.noThumbnailsText}>No Images</Text>
+                </View>
+              )}
+            </ScrollView>
+          </View>
 
-          {/* Main Image Display */}
+          {/* Main Image Display (Right Side) */}
           <View style={styles.mainImageContainer}>
             {currentImage ? (
               <Image 
@@ -185,36 +194,7 @@ const ListingDetailScreen = ({ route, navigation }) => {
           </View>
         </View>
 
-        {/* Mobile Layout: Horizontal Thumbnails Below Main Image */}
-        {screenWidth <= 768 && hasMultipleImages && (
-          <View style={styles.mobileThumbnailContainer}>
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false}
-              style={styles.mobileThumbnailScroll}
-            >
-              {listing.images.map((image, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={[
-                    styles.mobileThumbnail,
-                    index === currentImageIndex && styles.mobileActiveThumbnail
-                  ]}
-                  onPress={() => setCurrentImageIndex(index)}
-                >
-                  <Image 
-                    source={{ uri: image.url }} 
-                    style={styles.mobileThumbnailImage}
-                    resizeMode="cover"
-                  />
-                  {index === currentImageIndex && (
-                    <View style={styles.mobileActiveIndicator} />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        )}
+
 
         {/* Product Information */}
         <View style={styles.productInfo}>
@@ -869,6 +849,20 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 20,
     textAlign: 'center',
+  },
+  noThumbnailsPlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#f8f9fa',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderStyle: 'dashed',
+  },
+  noThumbnailsText: {
+    fontSize: 16,
+    color: '#999',
   },
 });
 
