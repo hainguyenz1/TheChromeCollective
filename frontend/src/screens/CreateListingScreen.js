@@ -18,13 +18,15 @@ const CreateListingScreen = ({ navigation }) => {
     description: '',
     price: '',
     currency: 'USD',
-    category: ''
+    category: '',
+    condition: 'Used'
   });
   
   const [selectedImages, setSelectedImages] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
+  const [isAIGenerating, setIsAIGenerating] = useState(false);
 
   // Simple image picker for web
   const pickImages = () => {
@@ -114,6 +116,7 @@ const CreateListingScreen = ({ navigation }) => {
         price: parseFloat(formData.price),
         currency: formData.currency,
         category: formData.category,
+        condition: formData.condition, // Add condition to the payload
         images: images
       }),
     });
@@ -126,9 +129,63 @@ const CreateListingScreen = ({ navigation }) => {
     return response.json();
   };
 
-  // Handle AI description generation (placeholder)
-  const handleAIGenerateDescription = () => {
-    Alert.alert('AI Description', 'AI description generation coming soon!');
+  // Handle AI description generation
+  const handleAIGenerateDescription = async () => {
+    // Validate required fields for AI generation
+    if (!formData.title.trim()) {
+      Alert.alert('Error', 'Please enter a title first to generate an AI description');
+      return;
+    }
+
+    setIsAIGenerating(true);
+    
+    try {
+      const response = await fetch('http://localhost:5001/api/ai/describe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: formData.title,
+          category: formData.category,
+          condition: formData.condition, // Use condition from formData
+          price: formData.price ? parseFloat(formData.price) : undefined,
+          currency: formData.currency,
+          notes: formData.description // Use current description as notes
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate AI description');
+      }
+
+      const data = await response.json();
+      
+      // Replace description if empty, otherwise append with divider
+      if (!formData.description.trim()) {
+        setFormData(prev => ({ ...prev, description: data.description }));
+      } else {
+        setFormData(prev => ({ 
+          ...prev, 
+          description: `${prev.description}\n\n---\n\n${data.description}` 
+        }));
+      }
+      
+      // Show success message
+      Alert.alert('Success', 'AI description generated and added to your listing!');
+      
+    } catch (error) {
+      console.error('Error generating AI description:', error);
+      
+      // Show user-friendly error message
+      let errorMessage = 'AI is unavailable right now. Please try again.';
+      if (error.message.includes('AI is unavailable')) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('AI Generation Failed', errorMessage);
+    } finally {
+      setIsAIGenerating(false);
+    }
   };
 
   // Handle listing submission
@@ -159,7 +216,7 @@ const CreateListingScreen = ({ navigation }) => {
       console.log('Listing created successfully:', result);
 
       // Reset form
-      setFormData({ title: '', description: '', price: '', currency: 'USD', category: '' });
+      setFormData({ title: '', description: '', price: '', currency: 'USD', category: '', condition: 'Used' });
       setSelectedImages([]);
       setUploadProgress({});
 
@@ -247,10 +304,7 @@ const CreateListingScreen = ({ navigation }) => {
             numberOfLines={4}
           />
 
-          {/* AI Generate Description Button */}
-          <TouchableOpacity style={styles.aiButton} onPress={handleAIGenerateDescription}>
-            <Text style={styles.aiButtonText}>🤖 AI-Generate Description</Text>
-          </TouchableOpacity>
+
 
           {/* Price and Currency */}
           <View style={styles.priceRow}>
@@ -287,6 +341,38 @@ const CreateListingScreen = ({ navigation }) => {
             onChangeText={(text) => setFormData({ ...formData, category: text })}
             placeholderTextColor="#999"
           />
+
+          {/* Condition */}
+          <View style={styles.conditionRow}>
+            <Text style={styles.conditionLabel}>Condition:</Text>
+            <TouchableOpacity
+              style={styles.conditionButton}
+              onPress={() => {
+                const conditions = ['New', 'Used', 'Refurbished'];
+                const currentIndex = conditions.indexOf(formData.condition);
+                const nextIndex = (currentIndex + 1) % conditions.length;
+                setFormData({ ...formData, condition: conditions[nextIndex] });
+              }}
+            >
+              <Text style={styles.conditionButtonText}>{formData.condition}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* AI Generate Description Button */}
+          <TouchableOpacity 
+            style={[styles.aiButton, isAIGenerating && styles.aiButtonDisabled]} 
+            onPress={handleAIGenerateDescription} 
+            disabled={isAIGenerating}
+          >
+            {isAIGenerating ? (
+              <View style={styles.aiButtonLoading}>
+                <ActivityIndicator color="#ffffff" size="small" />
+                <Text style={styles.aiButtonText}>Generating...</Text>
+              </View>
+            ) : (
+              <Text style={styles.aiButtonText}>🤖 AI-Generate Description</Text>
+            )}
+          </TouchableOpacity>
         </View>
 
         {/* Images Section */}
@@ -429,6 +515,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
+  aiButtonDisabled: {
+    opacity: 0.7,
+  },
+  aiButtonLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   aiButtonText: {
     color: '#ffffff',
     fontSize: 14,
@@ -458,6 +552,27 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   currencyButtonText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  conditionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  conditionLabel: {
+    fontSize: 12,
+    color: '#666',
+  },
+  conditionButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
+  },
+  conditionButtonText: {
     color: '#ffffff',
     fontSize: 12,
     fontWeight: '600',
