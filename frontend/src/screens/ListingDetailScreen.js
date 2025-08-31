@@ -8,11 +8,8 @@ import {
   Image,
   ActivityIndicator,
   Modal,
-  Dimensions,
   Alert
 } from 'react-native';
-
-const { width: screenWidth } = Dimensions.get('window');
 
 const ListingDetailScreen = ({ route, navigation }) => {
   const { listingId } = route.params;
@@ -100,11 +97,6 @@ const ListingDetailScreen = ({ route, navigation }) => {
   const hasMultipleImages = listing.images && listing.images.length > 1;
   const currentImage = listing.images && listing.images[currentImageIndex];
 
-  // Debug: Log screen width for troubleshooting
-  console.log('Screen width detected:', screenWidth);
-  console.log('Will show vertical gallery:', hasMultipleImages);
-  console.log('Will show horizontal mobile layout:', screenWidth <= 480 && hasMultipleImages);
-
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -160,11 +152,11 @@ const ListingDetailScreen = ({ route, navigation }) => {
           {/* Main Image Display (Right Side) */}
           <View style={styles.mainImageContainer}>
             {currentImage ? (
-              <Image 
-                source={{ uri: currentImage.url }} 
-                style={styles.mainImage}
-                resizeMode="cover"
-              />
+                             <Image 
+                 source={{ uri: currentImage.url }} 
+                 style={styles.mainImage}
+                 resizeMode="contain"
+               />
             ) : (
               <View style={styles.noImagePlaceholder}>
                 <Text style={styles.noImageText}>No Image Available</Text>
@@ -269,7 +261,7 @@ const ListingDetailScreen = ({ route, navigation }) => {
               </View>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Shipping:</Text>
-                <Text style={styles.summaryValue}>+ $15.00</Text>
+                <Text style={styles.summaryValue}>+ $10.00</Text>
               </View>
               <View style={[styles.summaryRow, styles.totalRow]}>
                 <Text style={styles.totalLabel}>Total:</Text>
@@ -369,18 +361,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   
-  // Image Gallery Styles
+  // Image Gallery Styles - Optimized for Web
   imageSection: {
     backgroundColor: '#ffffff',
     paddingBottom: 20,
-    flexDirection: 'row', // Added for horizontal layout
+    flexDirection: 'row', // Horizontal layout for web
     alignItems: 'flex-start', // Align items to the start
     paddingTop: 20, // Add top padding for better spacing
     borderBottomWidth: 1, // Subtle border separation
     borderBottomColor: '#f0f0f0',
   },
   thumbnailGallery: {
-    width: 100, // Fixed width for thumbnail gallery
+    width: 100, // Good width for web thumbnails
     paddingRight: 15, // Space between thumbnail and main image
     paddingLeft: 20, // Left padding for thumbnails
     paddingTop: 10, // Top padding for better spacing
@@ -389,13 +381,13 @@ const styles = StyleSheet.create({
     marginRight: 15, // Space between gallery and main image
   },
   thumbnailScrollView: {
-    maxHeight: 400, // Limit height to prevent excessive scrolling
+    maxHeight: 400, // Good height for web gallery
   },
   thumbnailItem: {
     width: '100%',
-    height: 80, // Fixed height for thumbnails
-    borderRadius: 8,
-    marginBottom: 12,
+    height: 80, // Good height for web thumbnails
+    borderRadius: 8, // Rounded corners
+    marginBottom: 10, // Good spacing between thumbnails
     borderWidth: 2,
     borderColor: 'transparent',
     position: 'relative', // Needed for active indicator positioning
@@ -425,6 +417,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 6,
+    objectFit: 'cover', // Ensure images cover the thumbnail area properly
   },
   activeIndicator: {
     position: 'absolute',
@@ -449,7 +442,7 @@ const styles = StyleSheet.create({
   mainImageContainer: {
     flex: 1, // Takes remaining space
     position: 'relative',
-    height: 400, // Increased height for better image display
+    height: 400, // Good height for web viewing
     marginRight: 20, // Right margin for spacing
     borderRadius: 12, // Rounded corners
     overflow: 'hidden', // Ensure rounded corners work
@@ -467,6 +460,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 12, // Match container border radius
+    objectFit: 'contain', // Show full image without cropping
   },
   noImagePlaceholder: {
     width: '100%',
@@ -526,69 +520,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Mobile Thumbnail Styles
-  mobileThumbnailContainer: {
-    marginTop: 10,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    backgroundColor: '#fafafa', // Subtle background
-    borderTopWidth: 1, // Top border separation
-    borderTopColor: '#f0f0f0',
-  },
-  mobileThumbnailScroll: {
-    // No specific styles needed for ScrollView, it handles its own content
-  },
-  mobileThumbnail: {
-    width: 80, // Fixed width for mobile thumbnails
-    height: 80,
-    borderRadius: 8,
-    marginRight: 10,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    position: 'relative',
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  mobileActiveThumbnail: {
-    borderColor: '#007AFF',
-    borderWidth: 3,
-    shadowColor: '#007AFF',
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 8,
-  },
-  mobileThumbnailImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 6,
-  },
-  mobileActiveIndicator: {
-    position: 'absolute',
-    bottom: 5,
-    left: '50%',
-    transform: [{ translateX: -10 }],
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#007AFF',
-    borderWidth: 2,
-    borderColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
+
 
   // Product Information Styles
   productInfo: {
