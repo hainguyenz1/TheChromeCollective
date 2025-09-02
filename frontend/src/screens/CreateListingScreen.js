@@ -11,8 +11,8 @@ import {
   ActivityIndicator,
   Modal
 } from 'react-native';
-
 const CreateListingScreen = ({ navigation }) => {
+  
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -67,7 +67,9 @@ const CreateListingScreen = ({ navigation }) => {
         // Get presigned URL with listings/temp prefix
         const presignResponse = await fetch('http://localhost:5001/api/uploads/presign', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json'
+          },
           body: JSON.stringify({
             fileName: image.name,
             contentType: image.type,
@@ -107,26 +109,33 @@ const CreateListingScreen = ({ navigation }) => {
 
   // Create listing function
   const createListing = async (images) => {
-    const response = await fetch('http://localhost:5001/api/listings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: formData.title,
-        description: formData.description,
-        price: parseFloat(formData.price),
-        currency: formData.currency,
-        category: formData.category,
-        condition: formData.condition, // Add condition to the payload
-        images: images
-      }),
-    });
+    try {
+      const response = await fetch('http://localhost:5001/api/listings', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          description: formData.description,
+          price: parseFloat(formData.price),
+          currency: formData.currency,
+          category: formData.category,
+          condition: formData.condition, // Add condition to the payload
+          images: images
+        }),
+      });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || error.message || 'Failed to create listing');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || error.message || 'Failed to create listing');
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Error creating listing:', error);
+      throw error;
     }
-
-    return response.json();
   };
 
   // Handle AI description generation
@@ -142,7 +151,9 @@ const CreateListingScreen = ({ navigation }) => {
     try {
       const response = await fetch('http://localhost:5001/api/ai/describe', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
           title: formData.title,
           category: formData.category,
@@ -269,8 +280,8 @@ const CreateListingScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
+            <View style={styles.header}>
+        <TouchableOpacity 
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
@@ -358,21 +369,21 @@ const CreateListingScreen = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
-          {/* AI Generate Description Button */}
-          <TouchableOpacity 
-            style={[styles.aiButton, isAIGenerating && styles.aiButtonDisabled]} 
-            onPress={handleAIGenerateDescription} 
-            disabled={isAIGenerating}
-          >
-            {isAIGenerating ? (
-              <View style={styles.aiButtonLoading}>
-                <ActivityIndicator color="#ffffff" size="small" />
-                <Text style={styles.aiButtonText}>Generating...</Text>
-              </View>
-            ) : (
-              <Text style={styles.aiButtonText}>🤖 AI-Generate Description</Text>
-            )}
-          </TouchableOpacity>
+                  {/* AI Generate Description Button */}
+        <TouchableOpacity 
+          style={[styles.aiButton, isAIGenerating && styles.aiButtonDisabled]} 
+          onPress={handleAIGenerateDescription} 
+          disabled={isAIGenerating}
+        >
+          {isAIGenerating ? (
+            <View style={styles.aiButtonLoading}>
+              <ActivityIndicator color="#ffffff" size="small" />
+              <Text style={styles.aiButtonText}>Generating...</Text>
+            </View>
+          ) : (
+            <Text style={styles.aiButtonText}>✨ AI-Generate Description</Text>
+          )}
+        </TouchableOpacity>
         </View>
 
         {/* Images Section */}

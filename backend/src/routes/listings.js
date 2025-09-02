@@ -1,16 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const Listing = require('../models/Listing');
+const { verifyToken, optionalAuth } = require('../middleware/auth');
 
-// Create a new listing
+// Create a new listing (public access)
 router.post('/', async (req, res) => {
   console.log('POST /listings request received');
   console.log('Request body:', JSON.stringify(req.body, null, 2));
 
   try {
-    const { title, description, price, currency, category, images } = req.body;
+    const { title, description, price, currency, category, condition, images } = req.body;
     
-    console.log('Extracted data:', { title, description, price, currency, category, imagesCount: images?.length });
+    console.log('Extracted data:', { title, description, price, currency, category, condition, imagesCount: images?.length });
     
     // Validate required fields
     if (!title || !description || !price) {
@@ -57,8 +58,9 @@ router.post('/', async (req, res) => {
       price: parsedPrice,
       currency: currency || 'USD',
       category,
+      condition: condition || 'Used',
       images: images || [],
-      ownerId: null // Optional for now
+      ownerId: req.user?.auth0Id || 'anonymous' // Set owner from authenticated user or anonymous
     });
 
     console.log('Listing model created:', JSON.stringify(listing, null, 2));
@@ -89,8 +91,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Get all listings with pagination and sorting
-router.get('/', async (req, res) => {
+// Get all listings with pagination and sorting (public access)
+router.get('/', optionalAuth, async (req, res) => {
   // Disable caching for this endpoint
   res.set({
     'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -203,10 +205,25 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Update listing
-router.put('/:id', async (req, res) => {
+// Update listing (requires authentication and ownership)
+router.put('/:id', verifyToken, async (req, res) => {
   try {
-    const { title, description, price, currency, category, images } = req.body;
+    const { title, description, price, currency, category, condition, images } = req.body;
+    
+    // First check if listing exists and user owns it
+    const existingListing = await Listing.findById(req.params.id);
+    if (!existingListing) {
+      return res.status(404).json({ 
+        error: 'Listing not found' 
+      });
+    }
+
+    // Check ownership
+    if (existingListing.ownerId !== req.user.auth0Id) {
+      return res.status(403).json({ 
+        error: 'You can only update your own listings' 
+      });
+    }
     
     const updateData = {};
     if (title) updateData.title = title;
@@ -215,6 +232,7 @@ router.put('/:id', async (req, res) => {
     if (price) updateData.price = parseFloat(price);
     if (currency) updateData.currency = currency;
     if (category) updateData.category = category;
+    if (condition) updateData.condition = condition;
     
     updateData.updatedAt = new Date();
 
@@ -223,12 +241,6 @@ router.put('/:id', async (req, res) => {
       updateData,
       { new: true, runValidators: true }
     );
-    
-    if (!listing) {
-      return res.status(404).json({ 
-        error: 'Listing not found' 
-      });
-    }
     
     res.json({
       message: 'Listing updated successfully',
@@ -242,19 +254,28 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Delete listing
-router.delete('/:id', async (req, res) => {
+// Delete listing (requires authentication and ownership)
+router.delete('/:id', verifyToken, async (req, res) => {
   try {
     console.log('DELETE /listings request received for ID:', req.params.id);
     
-    const listing = await Listing.findByIdAndDelete(req.params.id);
-    
-    if (!listing) {
+    // First check if listing exists and user owns it
+    const existingListing = await Listing.findById(req.params.id);
+    if (!existingListing) {
       console.log('Listing not found for deletion');
       return res.status(404).json({ 
         error: 'Listing not found' 
       });
     }
+
+    // Check ownership
+    if (existingListing.ownerId !== req.user.auth0Id) {
+      return res.status(403).json({ 
+        error: 'You can only delete your own listings' 
+      });
+    }
+    
+    const listing = await Listing.findByIdAndDelete(req.params.id);
     
     console.log('Listing deleted successfully:', listing.title);
     

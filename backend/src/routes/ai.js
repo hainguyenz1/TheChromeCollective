@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
+const { verifyToken } = require('../middleware/auth');
 
 // Rate limiting middleware for AI endpoints
 const aiRateLimit = rateLimit({

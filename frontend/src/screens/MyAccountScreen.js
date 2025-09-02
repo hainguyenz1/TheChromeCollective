@@ -8,22 +8,14 @@ import {
   Image,
   FlatList
 } from 'react-native';
+import { useAuth0 } from '@auth0/auth0-react';
+import LoginButton from '../components/LoginButton';
+import LogoutButton from '../components/LogoutButton';
+import UserProfile from '../components/UserProfile';
 
 const MyAccountScreen = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState('Selling');
-
-  // Mock user data
-  const user = {
-    username: 'hainguyenv1',
-    transactions: 6,
-    joinedYear: 2024,
-    country: 'United States',
-    rating: 0.0,
-    reviews: 0,
-    following: 1,
-    followers: 0,
-    profileImage: require('../../assets/Cat2.jpg') // Using existing image as placeholder
-  };
+  const { isAuthenticated, isLoading } = useAuth0();
 
   // Navigation tabs
   const tabs = [
@@ -58,6 +50,40 @@ const MyAccountScreen = ({ navigation }) => {
     </View>
   );
 
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>My Account</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.backButtonText}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>My Account</Text>
+        </View>
+        <View style={styles.authContainer}>
+          <Text style={styles.authTitle}>Welcome to TheChromeCollective</Text>
+          <Text style={styles.authSubtitle}>Please log in to access your account</Text>
+          <LoginButton style={styles.authButton} />
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -68,38 +94,15 @@ const MyAccountScreen = ({ navigation }) => {
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Account</Text>
+        <View style={styles.logoutContainer}>
+          <LogoutButton style={styles.logoutButton} />
+        </View>
       </View>
 
       <ScrollView style={styles.content}>
         {/* User Profile Header */}
         <View style={styles.profileSection}>
-          <View style={styles.profileHeader}>
-            <View style={styles.profileImageContainer}>
-              <Image source={user.profileImage} style={styles.profileImage} />
-              <TouchableOpacity style={styles.editPhotoButton}>
-                <Text style={styles.editPhotoText}>Edit Photo</Text>
-              </TouchableOpacity>
-            </View>
-            
-            <View style={styles.profileInfo}>
-              <Text style={styles.username}>{user.username}</Text>
-              <Text style={styles.transactions}>{user.transactions} Transactions</Text>
-              <Text style={styles.joinedInfo}>Joined in {user.joinedYear}</Text>
-              <Text style={styles.location}>📍 {user.country}</Text>
-            </View>
-
-            <View style={styles.profileStats}>
-              <Text style={styles.rating}>★ {user.rating} No Reviews</Text>
-              <Text style={styles.socialStats}>{user.following} Following</Text>
-              <Text style={styles.socialStats}>{user.followers} Followers</Text>
-              <TouchableOpacity style={styles.editProfileButton}>
-                <Text style={styles.editProfileButtonText}>EDIT PROFILE</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.settingsButton}>
-                <Text style={styles.settingsIcon}>⚙️</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          <UserProfile />
         </View>
 
         {/* Navigation Tabs */}
@@ -351,6 +354,46 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 14,
     fontWeight: '600',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666666',
+  },
+  authContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  authTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  authSubtitle: {
+    fontSize: 16,
+    color: '#666666',
+    marginBottom: 30,
+    textAlign: 'center',
+  },
+  authButton: {
+    minWidth: 200,
+  },
+  logoutContainer: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+  },
+  logoutButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
 });
 
