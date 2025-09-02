@@ -47,7 +47,6 @@ This guide will help you set up Auth0 authentication for TheChromeCollective mar
    - Go to "APIs" in the sidebar
    - Click "Create API"
    - Name: "TheChromeCollective API"
-   - Identifier: `https://api.thechromecollective.com` (or any unique identifier)
    - Signing Algorithm: "RS256"
    - Click "Create"
 
@@ -68,7 +67,6 @@ This guide will help you set up Auth0 authentication for TheChromeCollective mar
    ```env
    # Auth0 Configuration
    AUTH0_DOMAIN=your-auth0-domain.auth0.com
-   AUTH0_AUDIENCE=https://api.thechromecollective.com
    AUTH0_CLIENT_ID=your-auth0-client-id
    AUTH0_CLIENT_SECRET=your-auth0-client-secret
    ```
@@ -86,7 +84,6 @@ This guide will help you set up Auth0 authentication for TheChromeCollective mar
    # Auth0 Configuration
    EXPO_PUBLIC_AUTH0_DOMAIN=your-auth0-domain.auth0.com
    EXPO_PUBLIC_AUTH0_CLIENT_ID=your-auth0-client-id
-   EXPO_PUBLIC_AUTH0_AUDIENCE=https://api.thechromecollective.com
    EXPO_PUBLIC_AUTH0_REDIRECT_URI=http://localhost:19006
 
    # API Configuration
