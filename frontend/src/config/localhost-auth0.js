@@ -2,8 +2,8 @@
 // Replace these values with your actual Auth0 credentials
 
 export const localhostAuth0Config = {
-  domain: 'dev-jfr0qmmeyomx2voa.us.auth0.com', // Replace with your Auth0 domain
-  clientId: 'XcP7UUi1mBkIeI5xUhFo5Io1HwdToMch', // Replace with your Auth0 client ID
+  domain: 'your_auth0_domain', // Replace with your Auth0 domain
+  clientId: 'your_auth0_client_id', // Replace with your Auth0 client ID
   audience: undefined, // No audience for localhost development
   redirectUri: 'http://localhost:19006', // Your localhost URL
 };
